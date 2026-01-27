@@ -41,5 +41,5 @@ findBumpLine() {
 if [ out=$(findBumpLine "$1") ]; then
     printf "bump-type=%s\n" "${out}" >> "${GITHUB_OUTPUT}"
 else
-    return 1
+    exit 1
 fi
