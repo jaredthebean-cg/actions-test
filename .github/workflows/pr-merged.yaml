@@ -10,6 +10,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.1
+        with:
+            ref: ${{ github.sha }}
+            fetch-depth: 1
+            fetch-tags: true
       - name: Print
         uses: ./.github/actions/print
         with:
