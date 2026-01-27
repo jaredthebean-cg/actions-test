@@ -1,14 +1,18 @@
 name: "Commit Semantic Version Tagger"
-description: "Tags the current commit with an incremented semantic version from the last commit"
+description: "Tags the given SHA with an incremented semantic version from the last commit"
 inputs:
   versionType:
     description: "MAJOR|MINOR|PATCH"
     required: true
+  sha:
+    description: "The commit SHA to tag"
+    required: true
 outputs:
   tag:
-    description: "The tag applied to the current commit"
+    description: "The tag applied to the given SHA"
 runs:
   using: "docker"
   image: "Dockerfile"
   args:
     - ${{ inputs.versionType }}
+    - ${{ inputs.sha }}

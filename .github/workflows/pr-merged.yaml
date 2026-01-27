@@ -10,7 +10,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.1
-      - name: Tag Commit
+      - name: Print
         uses: ./.github/actions/print
         with:
           name: "pr-merged"
+      - name: Tag Commit
+        uses: ./.github/actions/tagCommit
+        with:
+          versionType: PATCH # TODO: Parse this from the PR message
+          sha: ${{ github.sha }}

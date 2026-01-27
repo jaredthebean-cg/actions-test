@@ -31,7 +31,8 @@ getLastSemverTag() {
     #
     # Returns an exit code of 0 if a semver tag is found
     # and 1 if none point to the last commit.
-    local tags=$(git tag --points-at HEAD~1)
+    local sha="$1"
+    local tags=$(git tag --points-at ${sha}~1)
     for tag in ${tags}; do
         if parseSemanticVersion "${tag}" >/dev/null; then
             printf "%s\n" "${tag}"
@@ -90,24 +91,37 @@ incrementSemVer() {
     printf "%d.%d.%d\n" ${major} ${minor} ${patch}
 }
 
-tagCurrent() {
-    git tag "$1" HEAD
+tagSha() {
+    if ! git tag "$1" "$2"; then
+        debug "Could not tag commit\n"
+        return 1
+    fi
+    if ! git push origin "$1"; then
+        debug "Could not push tag to origin\n"
+        return 1
+    fi
 }
 
 incrementAndTag() {
     local versionType="$1"
     checkVersionType "${versionType}" || return 1
+    local sha="$2"
 
     local lastTag
-    if ! lastTag=$(getLastSemverTag); then
+    if ! lastTag=$(getLastSemverTag "${sha}"); then
         debug "Could not find semver tag on last commit\n"
+        return 1
     fi
     local nextTag
     if ! nextTag=$(incrementSemVer "${versionType}" "${lastTag}"); then
         debug "Could not increment '%s'\n"  "${lastTag}"
+        return 1;
     fi
-    tagCurrent "${nextTag}"
-    printf "%s\n" "${nextTag}"
+    if ! tagSha "${nextTag}" "${sha}"; then
+        debug "Could not tag sha\n"
+        return 1;
+    fi
+    printf "%s %s\n" "${nextTag}" "${sha}"
 }
 
-incrementAndTag "$1"
+incrementAndTag "$1" "$2"
