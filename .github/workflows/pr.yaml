@@ -1,6 +1,11 @@
 name: Checks
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
 
 jobs:
   print:
@@ -12,6 +17,10 @@ jobs:
       uses: ./.github/actions/print
       with:
         name: "pr"
+    - name: Print PR Body
+      env:
+        PR_BODY: ${{github.event.pull_request.body}}
+      run: echo "${PR_BODY}"
   check-semver-bump:
     runs-on: ubuntu-latest
     steps:
