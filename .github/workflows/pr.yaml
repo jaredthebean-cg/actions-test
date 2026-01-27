@@ -12,3 +12,11 @@ jobs:
       uses: ./.github/actions/print
       with:
         name: "pr"
+  check-semver-bump:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check SemVer Bump Type
+      uses: ./.github/actions/getBumpFromPr
+      with:
+        pr-description: ${{ github.event.pull_request.body }}
+

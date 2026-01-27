@@ -19,12 +19,13 @@ jobs:
             # Need last commit as well to view last semver tag
             fetch-depth: 2 
             fetch-tags: true
-      - name: Print
-        uses: ./.github/actions/print
+      - name: Get SemVer Bump Type
+        id: bump-type
+        uses: ./.github/actions/getBumpFromPr
         with:
-          name: "pr-merged"
+          pr-description: ${{ github.event.pull_request.body }}
       - name: Tag Commit
         uses: ./.github/actions/tagCommit
         with:
-          versionType: PATCH # TODO: Parse this from the PR message
+          bumpType: ${{ steps.bump-type.outputs.bump-type }}
           sha: ${{ github.sha }}

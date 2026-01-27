@@ -1,7 +1,6 @@
 #!/bin/bash
-set -o xtrace
 debug() {
-    printf "$@"
+    printf "$@" >&2
 }
 
 parseSemanticVersion() {

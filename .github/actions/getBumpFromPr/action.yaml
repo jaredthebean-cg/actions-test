@@ -1,0 +1,15 @@
+name: "Get SemVer Bump Type"
+description: "Gets the SemVer Bump Type (MAJOR|MINOR|PATCH) from the PR Description"
+inputs:
+  pr-description:
+    description: "PR Description"
+    required: true
+outputs:
+  bump-type:
+    description: The SemVer bump type - one of 'MAJOR', 'MINOR', or 'PATCH'.
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+  - ${{ inputs.pr-description }}
