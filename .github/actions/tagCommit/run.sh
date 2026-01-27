@@ -132,5 +132,6 @@ incrementAndTag() {
 # Make the our git workspace a safe directory so git doesn't
 # complain about different ownership (as we are running as 'root' in Docker)
 git config --global --add safe.directory /github/workspace
-git log
+# Checkout action fetch-tags seems broken so we ensure they're fetched
+git fetch --tags
 incrementAndTag "$1" "$2"
