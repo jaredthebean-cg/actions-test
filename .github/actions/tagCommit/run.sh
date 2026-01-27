@@ -124,4 +124,11 @@ incrementAndTag() {
     printf "%s %s\n" "${nextTag}" "${sha}"
 }
 
+################################################################################
+#                                 Main Script                                  #
+################################################################################
+
+# Make the our git workspace a safe directory so git doesn't
+# complain about different ownership (as we are running as 'root' in Docker)
+git config --global --add safe.directory /github/workspace
 incrementAndTag "$1" "$2"
