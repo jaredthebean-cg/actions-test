@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o xtrace
 debug() {
     printf "$@"
 }
@@ -32,7 +33,7 @@ getLastSemverTag() {
     # Returns an exit code of 0 if a semver tag is found
     # and 1 if none point to the last commit.
     local sha="$1"
-    local tags=$(git tag --points-at ${sha}~1)
+    local tags=$(git tag --points-at "${sha}~1")
     for tag in ${tags}; do
         if parseSemanticVersion "${tag}" >/dev/null; then
             printf "%s\n" "${tag}"
