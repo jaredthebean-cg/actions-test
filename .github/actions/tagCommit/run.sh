@@ -1,5 +1,7 @@
 #!/bin/bash
+
 debug() {
+    # shellcheck disable=SC2059
     printf "$@" >&2
 }
 
@@ -32,7 +34,8 @@ getLastSemverTag() {
     # Returns an exit code of 0 if a semver tag is found
     # and 1 if none point to the last commit.
     local sha="$1"
-    local tags=$(git tag --points-at "${sha}~1")
+    local tags
+    tags=$(git tag --points-at "${sha}~1")
     for tag in ${tags}; do
         if parseSemanticVersion "${tag}" >/dev/null; then
             printf "%s\n" "${tag}"
@@ -70,7 +73,7 @@ incrementSemVer() {
     # Parse out the major, minor, patch versions from the semver string
     if out=$(parseSemanticVersion "${semver}"); then
         local major minor patch
-        IFS=' ' read major minor patch <<< ${out}
+        IFS=' ' read -r major minor patch <<< "${out}"
     else
         debug "Could not parse '%s' as a semver\n" "${semver}"
         return 1
@@ -79,16 +82,16 @@ incrementSemVer() {
     # Increment correct version
     case "${versionType}" in
         MAJOR)
-            major=$(expr ${major} + 1)
+            major=$((major+1))
             ;;
         MINOR)
-            minor=$(expr ${minor} + 1)
+            minor=$((minor+1))
             ;;
         PATCH)
-            patch=$(expr ${patch} + 1)
+            patch=$((patch+1))
             ;;
     esac
-    printf "%d.%d.%d\n" ${major} ${minor} ${patch}
+    printf "%d.%d.%d\n" "${major}" "${minor}" "${patch}"
 }
 
 tagSha() {
@@ -133,4 +136,6 @@ incrementAndTag() {
 git config --global --add safe.directory /github/workspace
 # Checkout action fetch-tags seems broken so we ensure they're fetched
 git fetch --tags
-incrementAndTag "$1" "$2"
+if ! incrementAndTag "$1" "$2"; then
+    exit 1;
+fi

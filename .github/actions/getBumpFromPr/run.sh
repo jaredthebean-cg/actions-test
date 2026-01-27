@@ -1,6 +1,7 @@
 #!/bin/bash
 
 debug() {
+    # shellcheck disable=SC2059
     printf "$@" >&2
 }
 
@@ -10,7 +11,8 @@ parseBumpLine() {
     local pattern='^[[:space:]]*-[[:space:]]+\[x][[:space:]]+(Major|Minor|Patch)[[:space:]]*$'
     if [[ "$1" =~ ${pattern} ]]; then
         local bumpVer="${BASH_REMATCH[1]}"
-        local capsCaseBumpVer=$(printf '%s\n' "${bumpVer}" | tr '[:lower:]' '[:upper:]')
+        local capsCaseBumpVer
+        capsCaseBumpVer=$(printf '%s\n' "${bumpVer}" | tr '[:lower:]' '[:upper:]')
         printf '%s\n' "${capsCaseBumpVer}"
     else
         return 1
@@ -24,7 +26,7 @@ findBumpLine() {
         local out 
         if out=$(parseBumpLine "${line}"); then
             bumpType="${out}"
-            count=$(expr "${count}" + 1)
+            count=$((count+1))
         fi
     done <<< "$1"
     if [ "${count}" -gt 1 ]; then
@@ -38,7 +40,7 @@ findBumpLine() {
     printf "%s\n" "${bumpType}"
 }
 
-if [ out=$(findBumpLine "$1") ]; then
+if out=$(findBumpLine "$1"); then
     printf "bump-type=%s\n" "${out}" >> "${GITHUB_OUTPUT}"
 else
     exit 1
