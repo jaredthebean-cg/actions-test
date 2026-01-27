@@ -15,6 +15,8 @@ jobs:
   check-semver-bump:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v6
     - name: Check SemVer Bump Type
       uses: ./.github/actions/getBumpFromPr
       with:
