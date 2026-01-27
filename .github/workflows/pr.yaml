@@ -1,0 +1,14 @@
+name: Checks
+on:
+  pull_request:
+
+jobs:
+  print:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v6
+    - name: Print
+      uses: ./.github/actions/print
+      with:
+        name: "pr"

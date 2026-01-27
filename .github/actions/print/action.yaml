@@ -1,0 +1,11 @@
+name: "Print Info"
+description: "Prints Info Available in the GitHub Runner/Docker"
+inputs:
+  name:
+    description: "Name of workflow"
+    required: true
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+  - ${{ inputs.name }}
