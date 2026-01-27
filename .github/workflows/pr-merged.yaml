@@ -3,6 +3,10 @@ on:
     types:
       - closed
 
+# So we can push the tag
+permissions:
+  contents: write
+
 jobs:
   tag-on-merge:
     if: github.event.pull_request.merged == true
