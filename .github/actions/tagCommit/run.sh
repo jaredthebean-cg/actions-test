@@ -8,16 +8,20 @@ debug() {
 parseSemanticVersion() {
     # Prints the MAJOR MINOR and PATCH integers of a semver specification
     # separated by space characters on one line
+    # Semantic Versions should be prefixed with a 'v', e.g. 'v1.2.3'
     #
     # Returns an exit code of 0 if the given string is a valid semver
     # and 1 if it is not.
 
     # Lifted from the recommended regex specified at
     # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    # Validated using test group from semver.org
+    # https://regex101.com/r/mpLfin/1
     # Non-capturing groups and shorthand character classes are not supported by
     # Bash so these have been substituted for POSIX character classes and
     # capturing groups.  In effect, '\d' -> '[[:digit:]]' & '(:?.*)' -> '(.*)'
-    local pattern='^v(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)(-((0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][[:digit:]]*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+    # Also added a literal 'v' prefix
+    local pattern='^v(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)(-((0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
 
     if [[ "$1" =~ ${pattern} ]]; then
         printf "%u %u %u\n" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
@@ -39,19 +43,22 @@ getLastSemverTag() {
     for tag in ${tags}; do
         if parseSemanticVersion "${tag}" >/dev/null; then
             printf "%s\n" "${tag}"
-            return 0 
+            return 0
         fi
     done
     # No match found
     return 1
 }
 
-checkVersionType() {
+isBumpType() {
+    # Checks to see if its argument is a valid semantic versioning bump type
+    # i.e. one of 'MAJOR', 'MINOR', or 'PATCH'
+    # Returns a successful exit status if so, and an error exit status if not
     case "${1}" in
         # pass as this is the good condition
-        MAJOR|MINOR|PATCH) 
+        MAJOR|MINOR|PATCH)
             return 0
-            ;; 
+            ;;
         # error condition
         *)
             debug "Invalid version type '%s' not one of 'MAJOR|MINOR|PATCH'\n" "${1}"
@@ -61,14 +68,20 @@ checkVersionType() {
 }
 
 incrementSemVer() {
+    # Increments a semantic version string based on the given bump type.
+    # The semantic version string should be prefixed with 'v'
+    # Example
+    # > incrementSemVer "MAJOR" "v1.2.3"
+    #   v2.0.0
+
     # Validate args
     if [ $# != 2 ]; then
         debug "Usage: $0 <MAJOR|MINOR|PATCH> <semver>\n"
         return 1
     fi
-    local versionType="$1"
+    local bumpType="$1"
     local semver="$2"
-    checkVersionType "${versionType}" || return 1
+    isBumpType "${bumpType}" || return 1
 
     # Parse out the major, minor, patch versions from the semver string
     if out=$(parseSemanticVersion "${semver}"); then
@@ -80,21 +93,26 @@ incrementSemVer() {
     fi
 
     # Increment correct version
-    case "${versionType}" in
+    case "${bumpType}" in
         MAJOR)
             major=$((major+1))
+            minor=0
+            patch=0
             ;;
         MINOR)
             minor=$((minor+1))
+            patch=0
             ;;
         PATCH)
             patch=$((patch+1))
             ;;
     esac
-    printf "%d.%d.%d\n" "${major}" "${minor}" "${patch}"
+    printf "v%d.%d.%d\n" "${major}" "${minor}" "${patch}"
 }
 
 tagSha() {
+    # Given a tag string and a git commit SHA, tags that commit and pushes it
+    # to the remote origin
     if ! git tag "$1" "$2"; then
         debug "Could not tag commit\n"
         return 1
@@ -106,8 +124,14 @@ tagSha() {
 }
 
 incrementAndTag() {
-    local versionType="$1"
-    checkVersionType "${versionType}" || return 1
+    # Given a semantic versioning bump type and a git commit SHA,
+    # Looks at the previous commit from that SHA for any tags in
+    # the form a semantic versioning string (e.g. 'v1.2.3').
+    # It then increments that semantic version according to the
+    # given bump type and tags the given commit SHA with the incremented
+    # semantic version string.
+    local bumpType="$1"
+    isBumpType "${bumpType}" || return 1
     local sha="$2"
 
     local lastTag
@@ -116,7 +140,7 @@ incrementAndTag() {
         return 1
     fi
     local nextTag
-    if ! nextTag=$(incrementSemVer "${versionType}" "${lastTag}"); then
+    if ! nextTag=$(incrementSemVer "${bumpType}" "${lastTag}"); then
         debug "Could not increment '%s'\n"  "${lastTag}"
         return 1;
     fi
