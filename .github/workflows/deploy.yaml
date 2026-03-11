@@ -14,10 +14,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: main
+          ref: ${{ github.event.workflow_run.head_sha }}
           # Fetch all history of commits
           fetch-depth: 0
           fetch-tags: true
+      - name: Print Tags
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha}}
+        run: |
+          parseSemanticVersion() {
+            local pattern='^v(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)\.(0|[1-9][[:digit:]]*)(-((0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][[:digit:]]*|[[:digit:]]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+
+            if [[ "$1" =~ ${pattern} ]]; then
+                printf "%u %u %u\n" "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}" "${BASH_REMATCH[3]}"
+                return 0
+            else
+                return 1
+            fi
+          }
+
+          getLastSemverTag() {
+              # Prints the first tag listed that points to the last commit that is a
+              # semver.
+              #
+              # Returns an exit code of 0 if a semver tag is found
+              # and 1 if none point to the last commit.
+              local sha="$1"
+              local tags
+              tags=$(git tag --points-at "${sha}~1")
+              for tag in ${tags}; do
+                  if parseSemanticVersion "${tag}" >/dev/null; then
+                      printf "%s\n" "${tag}"
+                      return 0
+                  fi
+              done
+              # No match found
+              return 1
+          }
+          
+          TAG=$(getLastSemverTag "${SHA}")
+          echo "Got '${TAG}'"
       - name: Print
         uses: ./.github/actions/print
         with:
